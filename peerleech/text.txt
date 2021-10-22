@@ -1,0 +1,3 @@
+Torrent: get_from_tracker, add_peers, run_connects
+
+Peer: (attr) (port, ip, peer_id), tcp_connect
