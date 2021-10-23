@@ -34,13 +34,13 @@ class Torrent:
     #make a get request to the tracker to fetch the peer ips
     def get_from_tracker(self):
 
-        peer_id = hashlib.sha1(bytes(random.getrandbits(20))).digest()
+        self.peer_id = hashlib.sha1(bytes(random.getrandbits(20))).digest()
         port = 6882
         left = self.file_length
 
         response = requests.get(self.announce_url, params={
             'info_hash': self.info_hash,
-            'peer_id': peer_id,
+            'peer_id': self.peer_id,
             'uploaded': 0,
             'downloaded': 0,
             'left': left,
@@ -48,7 +48,7 @@ class Torrent:
             'event': 'started',
         })
         data = bcoding.bdecode(response.content)
-        print(data)
+        # print(data)
         self.add_peers(data)
     
     def add_peers(self, data):
@@ -58,7 +58,7 @@ class Torrent:
         self.run_connect()
     
     def run_connect(self):
-        self.peer_list[1].connect_to_peer(self.info_hash)
+        self.peer_list[1].connect_to_peer(self.info_hash, self.peer_id)
 
 
 
