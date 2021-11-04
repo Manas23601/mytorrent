@@ -6,6 +6,7 @@ import struct
 import socket
 
 from .peer import Peer
+from .piece import Piece
 class Torrent:
     def __init__(self, file_path):
         # open the .torrent file and decode it (encoded in bencode)
@@ -18,7 +19,6 @@ class Torrent:
         self.info = self.data["info"]
         # info dictionary sha-1 hash value
         self.info_hash = hashlib.sha1(bcoding.bencode(self.data["info"])).digest()
-        print(self.info_hash)
         # name of the file
         self.name = self.data["info"]["name"]
         # url of tracker
@@ -30,8 +30,8 @@ class Torrent:
 
         # add_peers is going to store peer objects in this list
         self.peer_list = []
-        
-    
+        self.piece_list = []
+
     #make a get request to the tracker to fetch the peer ips
     def get_from_tracker(self):
         
@@ -49,36 +49,24 @@ class Torrent:
             'port': port,
             'event': 'started',
         })
+
         data = bcoding.bdecode(response.content)
-        print(data)
-        # self.add_peers(data)
+        self.piece_list = self.add_pieces()
+        self.add_peers(data)
+    
+
+    def add_pieces(self):
+        pieces = self.data["info"]["pieces"]
+        piece_hashes = [pieces[i: i+20] for i in range(0, len(pieces), 20)]
+        return [Piece(i, self.piece_length, hash) for i, hash in enumerate(piece_hashes)]
     
     def add_peers(self, data):
-        for peer in data["peers"]:
-            self.peer_list.append(Peer(peer))
+        self.peer_list = [Peer(i, peer) for i, peer in enumerate(data["peers"])]
+        
+        self.peer_list[10].connect_to_peer(self.info_hash, self.peer_id)
 
-        self.run_connect()
+        # -------- Still need to resolve the error in this function --------
+        # self.peer_list[10].request_piece(self.piece_list[0])
     
     def run_connect(self):
-        self.peer_list[0].connect_to_peer(self.info_hash, self.peer_id)
-
-
-
-# ip = data["peers"][0]["ip"]
-# peer = data["peers"][0]["peer id"]
-# port = data["peers"][0]["port"]
-# self.socket = socket.create_connection((ip, port), 3)
-# print(peer)
-# message = struct.pack('>B19s8s20s20s', 19, b'BitTorrent protocol', b'\x00'*8, self.info_hash, peer_id)
-# self.socket.sendall(message)
-# result = struct.unpack(">B19s8s20s20s" ,self.socket.recv(1 + 19 + 8 + 20 + 20))
-# print(result)
-# return bcoding.bdecode(response.content)
-
-
-
-
-# # each hash value is of 20 bytes
-# pieces = [self.data['info']['pieces'][i:i+20] for i in range(0, len(self.data['info']['pieces']), 20)]
-# # make each piece a Piece Class object. Each Object can be downloaded in varying amount of blocks
-# self.pieces = [Piece(i, self.piece_length, piece) for i, piece in enumerate(pieces)]
+        pass
