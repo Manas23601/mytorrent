@@ -18,6 +18,7 @@ class Torrent:
         self.info = self.data["info"]
         # info dictionary sha-1 hash value
         self.info_hash = hashlib.sha1(bcoding.bencode(self.data["info"])).digest()
+        print(self.info_hash)
         # name of the file
         self.name = self.data["info"]["name"]
         # url of tracker
@@ -49,8 +50,8 @@ class Torrent:
             'event': 'started',
         })
         data = bcoding.bdecode(response.content)
-        # print(data)
-        self.add_peers(data)
+        print(data)
+        # self.add_peers(data)
     
     def add_peers(self, data):
         for peer in data["peers"]:
