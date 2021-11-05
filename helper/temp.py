@@ -10,9 +10,9 @@ class Peer():
 
     def __init__(self):
 
-        self.ip = '76.236.133.121'
-        self.port = 13820
-        self.peer_id = b'TIX0285-d6b5a7c6c9f3'
+        self.ip = '148.251.2.71'
+        self.port = 50000
+        self.peer_id = b'-lt0D80-\x07\xf8\x16\xe3\x96\xb3\xbe8\xd8S\x85\x11'
 
         self.status = "OK"
     
@@ -34,7 +34,7 @@ class Peer():
         bit= []
         for i in range(bits[0] - 1):
             bit.append(struct.unpack(">B", self.socket.recv(1)))
-        # print(bit)
+        # print(bits[0], bit)
 
 
 
@@ -80,5 +80,6 @@ class Peer():
 
 peer = Peer()
 info_hash = b'\xb2l\x816:\xc1\xa26vS\x85\xa7\x02\xae\xc1\x07\xa4\x95\x81\xb5'
-peer_id = b'\xfa\x83\xda>7\xc7\x90Y\xd7\x8b\x9dq\xb3?Q\xd0\xb22\x84\xec'
+# peer_id = b'\xfa\x83\xda>7\xc7\x90Y\xd7\x8b\x9dq\xb3?Q\xd0\xb22\x84\xec'
+peer_id = b'-TR2930-jgk7gju10dw7'
 peer.connect_to_peer(info_hash, peer_id)

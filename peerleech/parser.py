@@ -7,6 +7,8 @@ import socket
 import os
 
 from .peer import Peer
+from .piece import Piece
+
 class Torrent:
     def __init__(self, file_path):
         # open the .torrent file and decode it (encoded in bencode)
@@ -28,16 +30,10 @@ class Torrent:
     
         self.pieces = [self.data['info']['pieces'][i:i+20] for i in range(0, len(self.data['info']['pieces']), 20)]
 
-        if self.data["info"]["files"]:
-            folder = "download"
-            if self.data["title"]:
-                folder = self.data["title"]
-            path = os.path.join(os.getcwd(), folder)
-            if not os.path.isdir(path):
-                os.mkdir(path)
-        
-        
-    
+        # add_peers is going to store peer objects in this list
+        self.peer_list = []
+        self.piece_list = []
+
     #make a get request to the tracker to fetch the peer ips
     def connect_to_tracker(self):
         
@@ -47,45 +43,43 @@ class Torrent:
         port = 6882
         left = self.file_length
 
-        response = requests.get(self.announce_url, params={
-            'info_hash': self.info_hash,
-            'peer_id': self.peer_id,
-            'uploaded': 0,
-            'downloaded': 0,
-            'left': left,
-            'port': port,
-            'event': 'started',
-        })
+        try:
+            response = requests.get(self.announce_url, params={
+                'info_hash': self.info_hash,
+                'peer_id': self.peer_id,
+                'uploaded': 0,
+                'downloaded': 0,
+                'left': left,
+                'port': port,
+                'event': 'started',
+            })
+        except Exception as e:
+            print(e, "Too many times", sep='\n')
+            return
+
+
         data = bcoding.bdecode(response.content)
-        print(data)
-        self.add_peers(data)
+        self.piece_list = self.add_pieces()
+        self.add_peers(data)    
+
+    def add_pieces(self):
+        pieces = self.data["info"]["pieces"]
+        piece_hashes = [pieces[i: i+20] for i in range(0, len(pieces), 20)]
+        return [Piece(i, self.piece_length, hash) for i, hash in enumerate(piece_hashes)]
     
     def add_peers(self, data):
-        for peer in data["peers"]:
-            self.peer_list.append(Peer(peer))
-
+        self.peer_list = [Peer(i, peer) for i, peer in enumerate(data["peers"])]
         self.run_connect()
     
     def run_connect(self):
-        self.peer_list[0].connect_to_peer(self.info_hash, self.peer_id)
-
-
-
-# ip = data["peers"][0]["ip"]
-# peer = data["peers"][0]["peer id"]
-# port = data["peers"][0]["port"]
-# self.socket = socket.create_connection((ip, port), 3)
-# print(peer)
-# message = struct.pack('>B19s8s20s20s', 19, b'BitTorrent protocol', b'\x00'*8, self.info_hash, peer_id)
-# self.socket.sendall(message)
-# result = struct.unpack(">B19s8s20s20s" ,self.socket.recv(1 + 19 + 8 + 20 + 20))
-# print(result)
-# return bcoding.bdecode(response.content)
-
-
-
-
-# # each hash value is of 20 bytes
-# pieces = [self.data['info']['pieces'][i:i+20] for i in range(0, len(self.data['info']['pieces']), 20)]
-# # make each piece a Piece Class object. Each Object can be downloaded in varying amount of blocks
-# self.pieces = [Piece(i, self.piece_length, piece) for i, piece in enumerate(pieces)]
+        while True:
+            inp = int(input("Enter: "))
+            if(inp == -1):
+                return
+            try:
+                if self.peer_list[inp].connect_to_peer(self.info_hash, self.peer_id):
+                    print(self.piece_list[0].n_blocks)
+                    self.peer_list[inp].request_piece(self.piece_list[1])
+            except Exception as e:
+                print(e)
+        # -------- Still need to resolve the error in this function --------
