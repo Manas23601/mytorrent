@@ -7,6 +7,7 @@ import socket
 
 from .peer import Peer
 from .piece import Piece
+
 class Torrent:
     def __init__(self, file_path):
         # open the .torrent file and decode it (encoded in bencode)
@@ -40,20 +41,24 @@ class Torrent:
         port = 6882
         left = self.file_length
 
-        response = requests.get(self.announce_url, params={
-            'info_hash': self.info_hash,
-            'peer_id': self.peer_id,
-            'uploaded': 0,
-            'downloaded': 0,
-            'left': left,
-            'port': port,
-            'event': 'started',
-        })
+        try:
+            response = requests.get(self.announce_url, params={
+                'info_hash': self.info_hash,
+                'peer_id': self.peer_id,
+                'uploaded': 0,
+                'downloaded': 0,
+                'left': left,
+                'port': port,
+                'event': 'started',
+            })
+        except Exception as e:
+            print(e, "Too many times", sep='\n')
+            return
+
 
         data = bcoding.bdecode(response.content)
         self.piece_list = self.add_pieces()
-        self.add_peers(data)
-    
+        self.add_peers(data)    
 
     def add_pieces(self):
         pieces = self.data["info"]["pieces"]
@@ -62,11 +67,17 @@ class Torrent:
     
     def add_peers(self, data):
         self.peer_list = [Peer(i, peer) for i, peer in enumerate(data["peers"])]
-        
-        self.peer_list[10].connect_to_peer(self.info_hash, self.peer_id)
-
-        # -------- Still need to resolve the error in this function --------
-        # self.peer_list[10].request_piece(self.piece_list[0])
+        self.run_connect()
     
     def run_connect(self):
-        pass
+        while True:
+            inp = int(input("Enter: "))
+            if(inp == -1):
+                return
+            try:
+                if self.peer_list[inp].connect_to_peer(self.info_hash, self.peer_id):
+                    print(self.piece_list[0].n_blocks)
+                    self.peer_list[inp].request_piece(self.piece_list[1])
+            except Exception as e:
+                print(e)
+        # -------- Still need to resolve the error in this function --------

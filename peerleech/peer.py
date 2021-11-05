@@ -26,9 +26,11 @@ class Peer():
 
         if peer_handshake[4] != self.peer_id:
             print("Error connecting to peer :", self.peer_id)
+            return False
         
         self.recv_bitfield()
         self.send_message()
+        return True
     
     def recv_bitfield(self):
         bitfield = struct.unpack(">IB", self.socket.recv(5))
@@ -42,31 +44,26 @@ class Peer():
         print(unchoke_message)
     
     # -------- Still need to resolve the error in this function --------
-    # def request_piece(self, piece):
-    #     size = 2 ** 14
-    #     piece_length = 262144
-    #     last_block_size = piece_length % size
-    #     num_of_blocks = int((piece_length - last_block_size) / size)
-    #     print(piece)
-    #     piece = []
-    #     for i in range(piece.n_blocks):
-    #         request_message = struct.pack(">IBIII", 13, 6, 0, i * (2 ** 14) , piece.size)
-    #         self.socket.sendall(request_message)
-    #         response = struct.unpack(">IBII", self.socket.recv(4 + 1 + 4 + 4))
-    #         print(response)
-    #         block = []
-    #         for i in range(response[0] - 9):
-    #             bit = self.socket.recv(1)
-    #             block.append(bit)
-    #         piece.append(block)
+    def request_piece(self, piece):
+        size = 2 ** 14
+
+        blocks_of_piece = []
+        for begin, end, _ in piece.blocks:
+            request_piece = struct.pack(">IBIII", 13, 6, piece.index, begin, size)
+            self.socket.sendall(request_piece)
+            block_info = struct.unpack(">IBII", self.socket.recv(4 + 1 + 4 + 4))
+
+            block_len = block_info[0] - 9
+            block = []
+            for i in range(block_len):
+                block.append(self.socket.recv(1))
+            blocks_of_piece.append(block)
         
-    #     net_item = b''
-    #     for block in piece:
-    #         for num in block:
-    #             net_item += num
-        
-    #     piece_hash = b'\xc0\x99\x8at\xf8\xee\x12vE\x15\xfd7t\xbe4\x04\xa8\xe2E\x00'
-    #     my_hash = hashlib.sha1(net_item).digest()
-    #     print(my_hash)
-    #     if my_hash == piece.hash:
-    #         print("hello")
+        net_item = b''
+        for block in blocks_of_piece:
+            for block_part in block:
+                net_item += block_part
+
+        my_hash = hashlib.sha1(net_item).digest()
+        if my_hash == piece.hash:
+            print("hello")
