@@ -4,6 +4,7 @@ import random
 import requests
 import struct
 import socket
+import os
 
 from .peer import Peer
 class Torrent:
@@ -19,23 +20,30 @@ class Torrent:
         # info dictionary sha-1 hash value
         self.info_hash = hashlib.sha1(bcoding.bencode(self.data["info"])).digest()
         # name of the file
-        self.name = self.data["info"]["name"]
+        self.folder_name = self.data["info"]["name"]
         # url of tracker
         self.announce_url = self.data["announce"]
         # each packet inside file length
         self.piece_length = self.data["info"]["piece length"]
-        # total file length
-        self.file_length = self.data["info"]["length"]
+    
+        self.pieces = [self.data['info']['pieces'][i:i+20] for i in range(0, len(self.data['info']['pieces']), 20)]
 
-        # add_peers is going to store peer objects in this list
-        self.peer_list = []
+        if self.data["info"]["files"]:
+            folder = "download"
+            if self.data["title"]:
+                folder = self.data["title"]
+            path = os.path.join(os.getcwd(), folder)
+            if not os.path.isdir(path):
+                os.mkdir(path)
+        
         
     
     #make a get request to the tracker to fetch the peer ips
-    def get_from_tracker(self):
+    def connect_to_tracker(self):
         
         # 20 byte long
         self.peer_id = hashlib.sha1(bytes(random.getrandbits(20))).digest()
+        print(self.peer_id)
         port = 6882
         left = self.file_length
 
@@ -49,7 +57,7 @@ class Torrent:
             'event': 'started',
         })
         data = bcoding.bdecode(response.content)
-        # print(data)
+        print(data)
         self.add_peers(data)
     
     def add_peers(self, data):
