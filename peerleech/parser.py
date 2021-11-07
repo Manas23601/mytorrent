@@ -61,7 +61,7 @@ class Torrent:
         self.num_of_pieces = ceil(self.file_length / self.piece_length)
         last_piece_size = int(self.file_length % self.piece_length)
         if last_piece_size > 0:
-            self.pieces[-1].size = last_piece_size
+            self.pieces[-1] = Piece(self.num_of_pieces - 1, last_piece_size, self.piece_hashs[-1])
 
 
     #make a get request to the tracker to fetch the peer ips
@@ -87,10 +87,8 @@ class Torrent:
             print(e, "Too many times", sep='\n')
             return
 
-
         data = bcoding.bdecode(response.content)
         self.tracker_interval = data["interval"]
-        # print(data)
         self.add_peers(data)    
 
     
@@ -106,20 +104,22 @@ class Torrent:
         print("All peers")
         for peer in self.peer_list:
             print(peer.ip , peer.port)
-        # self.run_connect()
+        self.run_connect()
     
     def run_connect(self):
-        self.peer_id = b"\xc3@#\x90\xda\xb7\x1f\xb9\x06B\xd5.\xf0wH'\xefw\xfe\r"
-        self.peer_list = []
-        self.peer_list.append(Peer(0,'79.141.154.97',51413,"manas"))
+        # self.peer_id = b"\xc3@#\x90\xda\xb7\x1f\xb9\x06B\xd5.\xf0wH'\xefw\xfe\r"
+        # self.peer_list = []
+        # self.peer_list.append(Peer(0,'79.141.154.97',51413,"manas"))
         while True:
             inp = int(input("Enter: "))
             if(inp == -1):
                 return
             try:
-                if not self.peer_list[inp].connect_to_peer(self.info_hash, self.peer_id):
+                if self.peer_list[inp].connect_to_peer(self.info_hash, self.peer_id):
                     print("Handshake Succesful")
                     self.peer_list[inp].recieve_message(self.pieces)
+                else:
+                    print("Not connected")
             except Exception as e:
                 print(e)
         # -------- Still need to resolve the error in this function --------

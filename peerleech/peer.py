@@ -13,28 +13,39 @@ class Peer():
     def __init__(self, index, ip, port, peer_id):
         self.index = index
         self.peer_id = peer_id
+        self.dummy = hashlib.sha1(bytes(random.getrandbits(20))).digest()
+
         if self.peer_id:
             self.ip = ip
             self.port = port
         else:
             self.ip = ".".join([str(i) for i in ip])
             self.port = int(port[-2]) * 256 +  int(port[-1])
-        if not isinstance(self.peer_id, bytes) and self.peer_id != None:
+
+        if not isinstance(self.peer_id, bytes) and self.peer_id:
             self.peer_id =  bytes(str(self.peer_id), encoding = "utf-8")
+
+        # since no peer_id is present uptil now, lets give it some dummy one until we get one from handshake
+        if self.peer_id is None:    
+            self.peer_id = self.dummy
         # self.status = "OK"
     
     def connect_to_peer(self, info_hash, peer_id):
         # For proxy values
         # https://www.socks-proxy.net/
         # self.socket = socket.create_connection((self.ip, self.port), proxy_type='socks4', proxy_addr='103.168.198.209' , proxy_port='5678', timeout=3)
+        print(self.ip, self.port, self.peer_id)
         self.socket = socket.create_connection((self.ip, self.port), 10)
         
         # requires peer_id which was sent initially to the tracker.
         your_handshake = struct.pack('>B19s8s20s20s', 19, b'BitTorrent protocol', b'\x00'*8, info_hash, peer_id)
         self.socket.sendall(your_handshake)
         peer_handshake = struct.unpack('>B19s8s20s20s' ,self.socket.recv(1 + 19 + 8 + 20 + 20))
+
+        if self.peer_id == self.dummy:
+            self.peer_id = peer_handshake[4]
         
-        if self.peer_id != None and peer_handshake[4] != self.peer_id:
+        if self.peer_id and peer_handshake[4] != self.peer_id:
             print("Error connecting to peer :", self.peer_id, peer_handshake[4])
             return False
 
