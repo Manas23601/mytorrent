@@ -30,7 +30,7 @@ class Peer():
             self.peer_id = self.dummy
         # self.status = "OK"
     
-    def connect_to_peer(self, info_hash, peer_id):
+    def connect_to_peer(self, info_hash, my_id):
         # For proxy values
         # https://www.socks-proxy.net/
         # self.socket = socket.create_connection((self.ip, self.port), proxy_type='socks4', proxy_addr='103.168.198.209' , proxy_port='5678', timeout=3)
@@ -38,8 +38,8 @@ class Peer():
         self.socket = socket.create_connection((self.ip, self.port), 10)
         
         # requires peer_id which was sent initially to the tracker.
-        your_handshake = struct.pack('>B19s8s20s20s', 19, b'BitTorrent protocol', b'\x00'*8, info_hash, peer_id)
-        self.socket.sendall(your_handshake)
+        our_handshake = struct.pack('>B19s8s20s20s', 19, b'BitTorrent protocol', b'\x00'*8, info_hash, my_id)
+        self.socket.sendall(our_handshake)
         peer_handshake = struct.unpack('>B19s8s20s20s' ,self.socket.recv(1 + 19 + 8 + 20 + 20))
 
         if self.peer_id == self.dummy:
