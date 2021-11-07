@@ -61,7 +61,7 @@ class Torrent:
         self.num_of_pieces = ceil(self.file_length / self.piece_length)
         last_piece_size = int(self.file_length % self.piece_length)
         if last_piece_size > 0:
-            self.pieces[-1] = Piece(len(self.piece_hashs) - 1, last_piece_size, self.piece_hashs[-1])
+            self.pieces[-1].size = last_piece_size
 
 
     #make a get request to the tracker to fetch the peer ips

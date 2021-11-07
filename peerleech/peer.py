@@ -26,7 +26,8 @@ class Peer():
     def connect_to_peer(self, info_hash, peer_id):
         # For proxy values
         # https://www.socks-proxy.net/
-        self.socket = socket.create_connection((self.ip, self.port), proxy_type='socks4', proxy_addr='103.168.198.209' , proxy_port='5678', timeout=3)
+        # self.socket = socket.create_connection((self.ip, self.port), proxy_type='socks4', proxy_addr='103.168.198.209' , proxy_port='5678', timeout=3)
+        self.socket = socket.create_connection((self.ip, self.port), 10)
         
         # requires peer_id which was sent initially to the tracker.
         your_handshake = struct.pack('>B19s8s20s20s', 19, b'BitTorrent protocol', b'\x00'*8, info_hash, peer_id)
