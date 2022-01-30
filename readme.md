@@ -28,7 +28,7 @@ python3 run main.py
 
 Want to contribute? Great!
 
-Mytorrent needs a couple of more features pending to be implemented
+Mytorrent needs a couple of more features pending to be implemented/improvements
 
 - Support for UDP based Trackers and DHT.
 - Download files in parallel using Twisted Library.
